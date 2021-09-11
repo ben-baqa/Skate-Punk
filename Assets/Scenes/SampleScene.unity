@@ -260,10 +260,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b60e592a1b4f56e40acba07bc88b47d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  followLerp: 0.6
-  centreLerp: 1
-  offset: 0.5
-  offsetAngle: 30
+  followLerp: 1
+  centreLerp: 0.1
+  offset: 1
+  offsetAngle: 20
+  standoff: 5
+  standoffLerp: 0.1
+  standoffThreshold: 0.1
+  standoffAngle: 30
+  standoffFollowLerp: 0.05
   mouseSensitivity: {x: 1, y: 1}
   gamePadSensitivity: {x: 7, y: 20}
 --- !u!1 &963194225
@@ -795,7 +800,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 1
-  m_Constraints: 112
+  m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!1 &1997904510
 GameObject:

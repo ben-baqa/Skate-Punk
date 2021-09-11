@@ -77,6 +77,7 @@ public class SkateController : MonoBehaviour
         {
             if (stopped)
             {
+                rb.velocity = Vector3.zero;
                 if (go && shouldGo)
                 {
                     stopped = false;
@@ -113,7 +114,8 @@ public class SkateController : MonoBehaviour
                     float v = pushForceCurve.Evaluate(Time.time - pushTime);
                     rb.AddForce(body.forward * v * pushForce);
                 }
-                rb.AddForce(-Physics.gravity * 0.95f);
+                if (body.forward.y >= 0)
+                    rb.AddForce(-Physics.gravity * 0.95f);
                 if (jump)
                 {
                     jump = false;
@@ -239,8 +241,6 @@ public class SkateController : MonoBehaviour
             }
         }
 
-        body.up = Vector3.Lerp(body.up, surfaceNormal, .2f);
-        body.RotateAround(body.position, body.up, rotation);
 
         if (ground)
             groundTime = Time.time;
@@ -253,8 +253,14 @@ public class SkateController : MonoBehaviour
         else if (ground && tricks)
         {
             tricks = false;
+            Vector3 flatDir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
+            rotation = 180 + Mathf.Atan2(flatDir.x, Mathf.Sqrt(flatDir.y * flatDir.y +
+                flatDir.x * flatDir.x));
             //trickHandler.EndTricks();
         }
+
+        body.up = Vector3.Lerp(body.up, surfaceNormal, .2f);
+        body.RotateAround(body.position, body.up, rotation);
     }
 
     private float LoopAngle(float angle, float centre = 0)

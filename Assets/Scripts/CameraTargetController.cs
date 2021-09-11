@@ -5,21 +5,23 @@ using UnityEngine.InputSystem;
 
 public class CameraTargetController : MonoBehaviour
 {
-    public float followLerp, centreLerp, offset, offsetAngle;
+    public float followLerp, centreLerp, offset, offsetAngle,
+        standoff, standoffLerp, standoffThreshold, standoffAngle, standoffFollowLerp;
     public Vector2 mouseSensitivity, gamePadSensitivity;
 
     private Rigidbody rb;
     private Transform targetTransform, body;
     private CameraController cam;
-    private Vector3 target;
+    private Vector3 target, baseTargetOffset;
 
-    private float rotX, rotY;
+    private float rotX, rotY, sAngle = 0;
     private bool flip, stopped;
 
     // Start is called before the first frame update
     void Start()
     {
         targetTransform = transform.GetChild(0);
+        baseTargetOffset = targetTransform.localPosition;
         body = transform.parent;
         cam = FindObjectOfType<CameraController>();
         target = targetTransform.position;
@@ -40,7 +42,7 @@ public class CameraTargetController : MonoBehaviour
         flip = true;
         stopped = false;
         MoveAndRotate();
-        cam.Follow(target, transform.position);
+        //cam.Follow(target, transform.position);
     }
 
     public void OnStop()
@@ -53,6 +55,7 @@ public class CameraTargetController : MonoBehaviour
 
     private void MoveAndRotate()
     {
+        bool notUpright = (body.up - Vector3.up).magnitude > standoffThreshold;
         Vector2 look = Vector2.zero;
         if (stopped)
         {
@@ -66,9 +69,20 @@ public class CameraTargetController : MonoBehaviour
             Vector2 mouseD = Mouse.current.delta.ReadValue();
             look.x += mouseD.x * mouseSensitivity.x;
             look.y -= mouseD.y * mouseSensitivity.y;
+        }else if(notUpright)
+        {
+            targetTransform.localPosition = Vector3.Lerp(targetTransform.localPosition,
+                baseTargetOffset + Vector3.back * standoff, standoffLerp);
+            sAngle = Mathf.Lerp(sAngle, standoffAngle, standoffLerp);
+        }
+        else
+        {
+            targetTransform.localPosition = Vector3.Lerp(targetTransform.localPosition,
+                baseTargetOffset, standoffLerp);
+            sAngle = Mathf.Lerp(sAngle, 0, standoffLerp);
         }
 
-        rotX = Mathf.Lerp(rotX + look.x, flip? offsetAngle:-offsetAngle,
+        rotX = Mathf.Lerp(rotX + look.x, flip? offsetAngle + sAngle:-offsetAngle -sAngle,
             stopped?0:centreLerp);
         rotY = Mathf.Lerp(rotY + look.y, 0, stopped?0:centreLerp);
         rotY = Mathf.Clamp(rotY, -20, 50);
@@ -84,7 +98,8 @@ public class CameraTargetController : MonoBehaviour
             transform.localEulerAngles = Vector3.up * rotX + Vector3.right * rotY;
 
 
-        target = Vector3.Lerp(target, targetTransform.position, followLerp);
+        target = Vector3.Lerp(target, targetTransform.position, notUpright?
+            standoffFollowLerp: followLerp);
     }
 
     private float LoopAngle(float f)
