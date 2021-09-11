@@ -15,7 +15,7 @@ public class CameraTargetController : MonoBehaviour
     private Vector3 target, baseTargetOffset;
 
     private float rotX, rotY, sAngle = 0;
-    private bool flip, stopped;
+    private bool flip, stopped, shouldFlip;
 
     // Start is called before the first frame update
     void Start()
@@ -28,6 +28,18 @@ public class CameraTargetController : MonoBehaviour
 
         rb = transform.parent.parent.GetComponentInChildren<Rigidbody>();
         Cursor.lockState = CursorLockMode.Locked;
+    }
+
+    private void Update()
+    {
+        Gamepad g = Gamepad.current;
+        shouldFlip = Keyboard.current.leftShiftKey.wasReleasedThisFrame ||
+                Keyboard.current.fKey.wasReleasedThisFrame ||
+                Keyboard.current.qKey.wasReleasedThisFrame ||
+                Keyboard.current.tabKey.wasReleasedThisFrame || (g != null && (
+                g.rightStickButton.wasReleasedThisFrame ||
+                g.rightShoulder.wasReleasedThisFrame ||
+                g.leftShoulder.wasReleasedThisFrame));
     }
 
     void FixedUpdate()
@@ -88,7 +100,7 @@ public class CameraTargetController : MonoBehaviour
         rotY = Mathf.Clamp(rotY, -20, 50);
         rotX = LoopAngle(rotX);
         if (!stopped) {
-            if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
+            if (shouldFlip)
                 flip = !flip;
 
             transform.localPosition = new Vector3(flip ? -offset : offset, .25f, 0);

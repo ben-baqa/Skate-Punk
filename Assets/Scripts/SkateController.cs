@@ -114,7 +114,7 @@ public class SkateController : MonoBehaviour
                     float v = pushForceCurve.Evaluate(Time.time - pushTime);
                     rb.AddForce(body.forward * v * pushForce);
                 }
-                if (body.forward.y >= 0)
+                if (body.forward.y >= -.15f)
                     rb.AddForce(-Physics.gravity * 0.95f);
                 if (jump)
                 {
@@ -223,8 +223,7 @@ public class SkateController : MonoBehaviour
         ground = false;
 
         RaycastHit rayHit;
-        var hit = Physics.Raycast(rb.position + body.forward * 1.25f,
-            -body.up, out rayHit);
+        var hit = Physics.Raycast(rb.position, -body.up, out rayHit);
         ground = hit && rayHit.distance < groundThreshold;
         if (ground) surfaceNormal = rayHit.normal;
         else
@@ -232,12 +231,6 @@ public class SkateController : MonoBehaviour
             hit = Physics.Raycast(rb.position, Vector3.down, out rayHit);
             ground = hit && rayHit.distance < groundThreshold;
             if (ground) surfaceNormal = rayHit.normal;
-            else
-            {
-                hit = Physics.Raycast(rb.position, -body.up, out rayHit);
-                ground = hit && rayHit.distance < groundThreshold;
-                if (ground) surfaceNormal = rayHit.normal;
-            }
         }
 
 
@@ -253,7 +246,7 @@ public class SkateController : MonoBehaviour
         {
             tricks = false;
             Vector3 flatDir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
-            rotation = 180 + Mathf.Atan2(flatDir.x, Mathf.Sqrt(flatDir.y * flatDir.y +
+            rotation = 180 + Mathf.Atan2(flatDir.z, Mathf.Sqrt(flatDir.y * flatDir.y +
                 flatDir.x * flatDir.x));
             anim.SetTrigger("land");
             //trickHandler.EndTricks();
@@ -290,5 +283,10 @@ public class SkateController : MonoBehaviour
     public void Jump()
     {
         rb.AddForce(body.up * jumpForce, ForceMode.Impulse);
+    }
+
+    public void Push(float f)
+    {
+        rb.AddForce(body.forward * f, ForceMode.Impulse);
     }
 }

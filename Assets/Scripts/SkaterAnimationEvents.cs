@@ -5,6 +5,7 @@ using UnityEngine;
 public class SkaterAnimationEvents : MonoBehaviour
 {
     private SkateController pCon;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -24,5 +25,10 @@ public class SkaterAnimationEvents : MonoBehaviour
     private void Jump()
     {
         pCon.Jump();
+    }
+
+    private void Push(float f)
+    {
+        pCon.Push(f);
     }
 }
