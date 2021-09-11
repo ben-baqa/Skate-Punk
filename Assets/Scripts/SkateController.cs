@@ -119,7 +119,6 @@ public class SkateController : MonoBehaviour
                 if (jump)
                 {
                     jump = false;
-                    rb.AddForce(body.up * jumpForce, ForceMode.Impulse);
                     anim.SetTrigger("jump");
                 }
             }
@@ -256,6 +255,7 @@ public class SkateController : MonoBehaviour
             Vector3 flatDir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
             rotation = 180 + Mathf.Atan2(flatDir.x, Mathf.Sqrt(flatDir.y * flatDir.y +
                 flatDir.x * flatDir.x));
+            anim.SetTrigger("land");
             //trickHandler.EndTricks();
         }
 
@@ -285,5 +285,10 @@ public class SkateController : MonoBehaviour
     public void OnStop()
     {
         camCon.OnStop();
+    }
+
+    public void Jump()
+    {
+        rb.AddForce(body.up * jumpForce, ForceMode.Impulse);
     }
 }

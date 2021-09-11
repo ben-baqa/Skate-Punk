@@ -20,4 +20,9 @@ public class SkaterAnimationEvents : MonoBehaviour
     {
         pCon.OnStart();
     }
+
+    private void Jump()
+    {
+        pCon.Jump();
+    }
 }
