@@ -71,6 +71,7 @@ public class SkateController : MonoBehaviour
     private void FixedUpdate()
     {
         UpdatePositions();
+        anim.SetBool("ground", ground);
         Turn();
         previousVelocity = rb.velocity;
         if (ground)
@@ -118,8 +119,8 @@ public class SkateController : MonoBehaviour
                     rb.AddForce(-Physics.gravity * 0.95f);
                 if (jump)
                 {
-                    jump = false;
                     anim.SetTrigger("jump");
+                    jump = false;
                 }
             }
         }
@@ -167,7 +168,7 @@ public class SkateController : MonoBehaviour
             brake = g.leftTrigger.ReadValue();
             brakeDecay = brake == 0;
 
-            jump |= g.aButton.wasPressedThisFrame;
+            jump |= g.aButton.isPressed;
         }
         var k = Keyboard.current;
         if (k.wKey.isPressed || k.upArrowKey.isPressed)
@@ -188,7 +189,7 @@ public class SkateController : MonoBehaviour
         turn = CleanInput(turn);
         brake = CleanInput(brake);
 
-        jump |= k.spaceKey.wasPressedThisFrame;
+        jump |= k.spaceKey.isPressed;
     }
 
     private float CleanInput(float f)
@@ -203,10 +204,11 @@ public class SkateController : MonoBehaviour
             spriteRotation = Mathf.Lerp(spriteRotation, 90, 0.1f);
             float v = Vector3.Dot(rb.velocity, body.forward);
             float diff = turn * v * Time.fixedDeltaTime;
-            if (v > 0)
-                diff *= turnForce;
-            else
-                diff *= backupTurnForce;
+            //if (v > 0)
+            //{
+            //    diff = Mathf.Sqrt(diff);
+            //}
+            diff *= turnForce;
             rotation = LoopAngle(rotation + diff);
         }
         else
@@ -245,9 +247,13 @@ public class SkateController : MonoBehaviour
         else if (ground && tricks)
         {
             tricks = false;
-            Vector3 flatDir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
-            rotation = 180 + Mathf.Atan2(flatDir.z, Mathf.Sqrt(flatDir.y * flatDir.y +
-                flatDir.x * flatDir.x));
+            Vector3 dir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
+            float r = Mathf.Atan2(dir.z, Mathf.Sqrt(dir.y * dir.y + dir.x * dir.x));
+            r *= Mathf.Rad2Deg;
+            if (dir.x > 0)
+                r = 180 - r;
+            rotation = r - 90;
+
             anim.SetTrigger("land");
             //trickHandler.EndTricks();
         }
@@ -282,11 +288,12 @@ public class SkateController : MonoBehaviour
 
     public void Jump()
     {
-        rb.AddForce(body.up * jumpForce, ForceMode.Impulse);
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
     public void Push(float f)
     {
         rb.AddForce(body.forward * f, ForceMode.Impulse);
+        anim.ResetTrigger("jump");
     }
 }
