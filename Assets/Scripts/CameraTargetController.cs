@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 public class CameraTargetController : MonoBehaviour
 {
-    public float followLerp, centreLerp, offset, offsetAngle,
+    public float followLerp, centreLerp, offset, offsetAngle, offSetLerp,
         standoff, standoffLerp, standoffThreshold, standoffAngle, standoffFollowLerp;
     public Vector2 mouseSensitivity, gamePadSensitivity;
 
@@ -14,7 +14,7 @@ public class CameraTargetController : MonoBehaviour
     private CameraController cam;
     private Vector3 target, baseTargetOffset;
 
-    private float rotX, rotY, sAngle = 0;
+    private float rotX, rotY, sAngle = 0, offVal = 0;
     private bool flip, stopped, shouldFlip;
 
     // Start is called before the first frame update
@@ -24,7 +24,7 @@ public class CameraTargetController : MonoBehaviour
         baseTargetOffset = targetTransform.localPosition;
         body = transform.parent;
         cam = FindObjectOfType<CameraController>();
-        target = targetTransform.position;
+        target = cam.transform.position;
 
         rb = transform.parent.parent.GetComponentInChildren<Rigidbody>();
         Cursor.lockState = CursorLockMode.Locked;
@@ -33,7 +33,7 @@ public class CameraTargetController : MonoBehaviour
     private void Update()
     {
         Gamepad g = Gamepad.current;
-        shouldFlip = Keyboard.current.leftShiftKey.wasReleasedThisFrame ||
+        shouldFlip |= Keyboard.current.leftShiftKey.wasReleasedThisFrame ||
                 Keyboard.current.fKey.wasReleasedThisFrame ||
                 Keyboard.current.qKey.wasReleasedThisFrame ||
                 Keyboard.current.tabKey.wasReleasedThisFrame || (g != null && (
@@ -53,7 +53,8 @@ public class CameraTargetController : MonoBehaviour
         rotX = f;
         flip = true;
         stopped = false;
-        MoveAndRotate();
+        target = cam.transform.position;
+        //MoveAndRotate();
         //cam.Follow(target, transform.position);
     }
 
@@ -61,7 +62,7 @@ public class CameraTargetController : MonoBehaviour
     {
         stopped = true;
         flip = true;
-        transform.localPosition = new Vector3(0, .25f, 0);
+        //transform.localPosition = new Vector3(0, .25f, 0);
         MoveAndRotate();
     }
 
@@ -99,15 +100,25 @@ public class CameraTargetController : MonoBehaviour
         rotY = Mathf.Lerp(rotY + look.y, 0, stopped?0:centreLerp);
         rotY = Mathf.Clamp(rotY, -20, 50);
         rotX = LoopAngle(rotX);
-        if (!stopped) {
+        if (!stopped)
+        {
             if (shouldFlip)
+            {
                 flip = !flip;
+                shouldFlip = false;
+            }
 
-            transform.localPosition = new Vector3(flip ? -offset : offset, .25f, 0);
+            offVal = Mathf.Lerp(offVal, flip ? -offset : offset, offSetLerp);
+            transform.localPosition = new Vector3(offVal, .25f, 0);
             transform.up = Vector3.up;
             transform.eulerAngles = Vector3.up * (rotX + body.eulerAngles.y);
-        }else
+        }
+        else
+        {
+            offVal = Mathf.Lerp(offVal, 0, offSetLerp);
+            transform.localPosition = new Vector3(offVal, .25f, 0);
             transform.localEulerAngles = Vector3.up * rotX + Vector3.right * rotY;
+        }
 
 
         target = Vector3.Lerp(target, targetTransform.position, notUpright?

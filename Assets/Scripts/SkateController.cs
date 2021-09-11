@@ -84,7 +84,7 @@ public class SkateController : MonoBehaviour
                     stopped = false;
                     go = false;
                     shouldGo = false;
-                    OnStart();
+                    //OnStart();
                 }
                 else
                 {
@@ -279,6 +279,8 @@ public class SkateController : MonoBehaviour
         body.RotateAround(body.position, body.up, rotation);
         camCon.ResetRotation(0);
         spriteRotation = LoopAngle(90 - standingAngle, 90);
+        sprite.localEulerAngles = Vector3.up * spriteRotation;
+        go = false;
     }
 
     public void OnStop()
