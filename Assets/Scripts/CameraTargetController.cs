@@ -103,9 +103,11 @@ public class CameraTargetController : MonoBehaviour
             sAngle = Mathf.Lerp(sAngle, 0, standoffLerp);
         }
 
-        rotX = Mathf.Lerp(rotX + look.x, flip? offsetAngle + sAngle:-offsetAngle -sAngle,
-            stopped?0:centreLerp);
-        rotY = Mathf.Lerp(rotY + look.y, 0, stopped?0:centreLerp);
+        float l = centreLerp;
+        if (stopped)
+            l = 0;
+        rotX = Mathf.Lerp(rotX + look.x, flip? offsetAngle + sAngle:-offsetAngle -sAngle,l);
+        rotY = Mathf.Lerp(rotY + look.y, 0, l);
         rotY = Mathf.Clamp(rotY, -20, 50);
         rotX = LoopAngle(rotX);
         if (!stopped)
@@ -116,7 +118,10 @@ public class CameraTargetController : MonoBehaviour
                 shouldFlip = false;
             }
 
-            offVal = Mathf.Lerp(offVal, flip ? -offset : offset, offSetLerp);
+            float n = offset;
+            if (flip)
+                n = -offset;
+            offVal = Mathf.Lerp(offVal, n, offSetLerp);
             transform.localPosition = new Vector3(offVal, .25f, 0);
             transform.up = Vector3.up;
             transform.eulerAngles = Vector3.up * (rotX + body.eulerAngles.y);
@@ -128,17 +133,18 @@ public class CameraTargetController : MonoBehaviour
             transform.localEulerAngles = Vector3.up * rotX + Vector3.right * rotY;
         }
 
-
-        target = Vector3.Lerp(target, targetTransform.position, shouldStandoff?
-            standoffFollowLerp: followLerp);
+        float ler = followLerp;
+        if (shouldStandoff)
+            ler = standoffFollowLerp;
+        target = Vector3.Lerp(target, targetTransform.position, ler);
     }
 
     private float LoopAngle(float f)
     {
         if (f > 180)
-            return LoopAngle(f - 360);
+            return f - 360;
         if (f < -180)
-            return LoopAngle(f + 360);
+            return f + 360;
         return f;
     }
 }
