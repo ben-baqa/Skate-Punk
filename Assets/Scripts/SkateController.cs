@@ -221,9 +221,9 @@ public class SkateController : MonoBehaviour
 
     private void UpdatePositions()
     {
-        if (rb.position.y < -100)
+        if (rb.position.y < -30)
         {
-            rb.position = new Vector3(0, 2, 0);
+            rb.position = new Vector3(0, .5f, 0);
             rb.velocity = Vector3.zero;
             stopped = true;
             shouldGo = true;
