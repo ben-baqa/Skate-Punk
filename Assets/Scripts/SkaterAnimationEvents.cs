@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class SkaterAnimationEvents : MonoBehaviour
 {
+    public AudioSource jump, scoot, land;
+
     private SkateController pCon;
 
     // Start is called before the first frame update
@@ -25,10 +27,21 @@ public class SkaterAnimationEvents : MonoBehaviour
     private void Jump()
     {
         pCon.Jump();
+        jump.Play();
     }
 
     private void Push(float f)
     {
         pCon.Push(f);
+    }
+
+    private void OnLand()
+    {
+        land.Play();
+    }
+
+    private void OnScoot()
+    {
+        scoot.Play();
     }
 }

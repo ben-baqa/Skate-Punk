@@ -8,7 +8,7 @@ public class SkateController : MonoBehaviour
     [Header("Basic Attributes")]
     public float pushForce;
     public float turnForce, backupTurnForce, airTurnForce, brakeForce,
-        jumpForce, pushDelay;
+        jumpForce, pushDelay, maxSpeed = 10;
     [Range(0, 1f)]
     public float wheelFriction, driftFriction, maxBrakeFriction;
 
@@ -32,14 +32,13 @@ public class SkateController : MonoBehaviour
     private float pushTime;
 
     private Rigidbody rb;
-    private Vector3 surfaceNormal,
-        previousVelocity, deltaV;
+    private Vector3 surfaceNormal;
 
     //private TrickHandler trickHandler;
 
     // controls
     private float turn, brake, rotation, spriteRotation;
-    private bool go, jump;
+    private bool go, jump, pushing = false;
 
     private float groundThreshold;
     private bool tricks = false, stopped = true, shouldGo=true;
@@ -52,7 +51,7 @@ public class SkateController : MonoBehaviour
     {
         rb = GetComponentInChildren<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
-        groundThreshold = rb.GetComponent<SphereCollider>().radius * Mathf.Sqrt(2);
+        groundThreshold = rb.GetComponent<SphereCollider>().radius * 1.25f;
 
         body = transform.GetChild(0);
         sprite = body.GetChild(0);
@@ -73,7 +72,6 @@ public class SkateController : MonoBehaviour
         UpdatePositions();
         anim.SetBool("ground", ground);
         Turn();
-        previousVelocity = rb.velocity;
         if (ground)
         {
             if (stopped)
@@ -103,27 +101,34 @@ public class SkateController : MonoBehaviour
                     go = false;
                 }
 
-                if (go)
+                if (go && !pushing)
                 {
                     if (pushTime + pushDelay < Time.time)
                     {
                         anim.SetTrigger("push");
                         pushTime = Time.time;
+                        pushing = true;
                     }
-                    else if (pushTime + pushForceCurve[pushForceCurve.length - 1].time < Time.time)
-                        go = false;
+                }
+
+                if (pushing && Vector3.ProjectOnPlane(rb.velocity, Vector3.up)
+                    .magnitude < maxSpeed)
+                {
                     float v = pushForceCurve.Evaluate(Time.time - pushTime);
                     rb.AddForce(body.forward * v * pushForce);
+                    if (pushTime + pushForceCurve[pushForceCurve.length - 1].time < Time.time)
+                        pushing = false;
                 }
-                if (body.forward.y >= -.15f)
-                    rb.AddForce(-Physics.gravity * 0.95f);
                 if (jump)
                 {
                     anim.SetTrigger("jump");
                     jump = false;
                 }
+                else if (body.forward.y >= -.15f)
+                    rb.AddForce(-Physics.gravity * 0.95f);
             }
         }
+        AudioCruncher.air = !ground;
         //else go = false;
     }
 
@@ -157,7 +162,7 @@ public class SkateController : MonoBehaviour
     private void UpdateControls()
     {
         bool brakeDecay = true, turnDecay = true;
-        jump = false;
+        jump = go = false;
 
         Gamepad g = Gamepad.current;
         if (g != null)
@@ -204,16 +209,11 @@ public class SkateController : MonoBehaviour
             spriteRotation = Mathf.Lerp(spriteRotation, 90, 0.1f);
             float v = Vector3.Dot(rb.velocity, body.forward);
             float diff = turn * v * Time.fixedDeltaTime;
-            //if (v > 0)
-            //{
-            //    diff = Mathf.Sqrt(diff);
-            //}
             diff *= turnForce;
             rotation = LoopAngle(rotation + diff);
         }
         else
         {
-            //rotation = LoopAngle(rotation + turn * airTurnForce);
             spriteRotation = LoopAngle(spriteRotation + turn * airTurnForce, 90);
         }
         sprite.localEulerAngles = Vector3.up * spriteRotation;
@@ -221,11 +221,21 @@ public class SkateController : MonoBehaviour
 
     private void UpdatePositions()
     {
+        if (rb.position.y < -100)
+        {
+            rb.position = new Vector3(0, 2, 0);
+            rb.velocity = Vector3.zero;
+            stopped = true;
+            shouldGo = true;
+            go = false;
+            OnStop();
+        }
+
         body.position = rb.position;
         ground = false;
 
         RaycastHit rayHit;
-        var hit = Physics.Raycast(rb.position, -body.up, out rayHit);
+        bool hit = Physics.Raycast(rb.position, -body.up, out rayHit);
         ground = hit && rayHit.distance < groundThreshold;
         if (ground) surfaceNormal = rayHit.normal;
         else
@@ -234,6 +244,11 @@ public class SkateController : MonoBehaviour
             ground = hit && rayHit.distance < groundThreshold;
             if (ground) surfaceNormal = rayHit.normal;
         }
+        if (ground)
+            if (rayHit.collider)
+                camCon.shouldStandoff = !rayHit.collider.CompareTag("ground");
+            else
+                camCon.shouldStandoff = false;
 
 
         if (ground)
@@ -248,11 +263,14 @@ public class SkateController : MonoBehaviour
         {
             tricks = false;
             Vector3 dir = Vector3.ProjectOnPlane(rb.velocity, surfaceNormal).normalized;
-            float r = Mathf.Atan2(dir.z, Mathf.Sqrt(dir.y * dir.y + dir.x * dir.x));
-            r *= Mathf.Rad2Deg;
-            if (dir.x > 0)
-                r = 180 - r;
-            rotation = r - 90;
+            //float r = Mathf.Atan2(dir.z, Mathf.Sqrt(dir.y * dir.y + dir.x * dir.x));
+            //r *= Mathf.Rad2Deg;
+            //if (dir.x > 0)
+            //    r = 180 - r;
+            //rotation = r + 90;
+
+            body.forward = dir;
+            rotation = body.localEulerAngles.y;
 
             anim.SetTrigger("land");
             //trickHandler.EndTricks();

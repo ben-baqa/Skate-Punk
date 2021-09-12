@@ -9,6 +9,9 @@ public class CameraTargetController : MonoBehaviour
         standoff, standoffLerp, standoffThreshold, standoffAngle, standoffFollowLerp;
     public Vector2 mouseSensitivity, gamePadSensitivity;
 
+    [HideInInspector]
+    public bool shouldStandoff = false;
+
     private Rigidbody rb;
     private Transform targetTransform, body;
     private CameraController cam;
@@ -68,7 +71,7 @@ public class CameraTargetController : MonoBehaviour
 
     private void MoveAndRotate()
     {
-        bool notUpright = (body.up - Vector3.up).magnitude > standoffThreshold;
+        shouldStandoff &= !stopped;
         Vector2 look = Vector2.zero;
         if (stopped)
         {
@@ -82,7 +85,12 @@ public class CameraTargetController : MonoBehaviour
             Vector2 mouseD = Mouse.current.delta.ReadValue();
             look.x += mouseD.x * mouseSensitivity.x;
             look.y -= mouseD.y * mouseSensitivity.y;
-        }else if(notUpright)
+
+            targetTransform.localPosition = Vector3.Lerp(targetTransform.localPosition,
+                baseTargetOffset, standoffLerp);
+            sAngle = Mathf.Lerp(sAngle, 0, standoffLerp);
+        }
+        else if(shouldStandoff)
         {
             targetTransform.localPosition = Vector3.Lerp(targetTransform.localPosition,
                 baseTargetOffset + Vector3.back * standoff, standoffLerp);
@@ -121,7 +129,7 @@ public class CameraTargetController : MonoBehaviour
         }
 
 
-        target = Vector3.Lerp(target, targetTransform.position, notUpright?
+        target = Vector3.Lerp(target, targetTransform.position, shouldStandoff?
             standoffFollowLerp: followLerp);
     }
 
